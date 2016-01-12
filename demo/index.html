@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>jQuery Social Plugin</title>
+
+	<meta property="og:title" content="jQuery Social Plugin">
+	<meta property="og:description" content="A jQuery plugin to manage social share buttons.">
+	<meta property="og:type" content="website">
+	<meta property="fb:app_id" content="1006045129447372"><!-- Change it! Does not use this on your site! -->
+
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+	<h1>jQuery Social Plugin</h1>
+</header>
+
+<main>
+	<div class="social" data-url="http://labs.metaline.it/_script/jquery-social/demo/" data-title="Google.com">
+		<ul class="social__list">
+			<li class="social__item social--facebook" data-network="facebook-share">Facebook</li>
+			<li class="social__item social--google" data-network="googleplus">Google+</li>
+			<li class="social__item social--twitter" data-network="twitter">Twitter</li>
+			<li class="social__item social--pinterest" data-network="pinterest">Pinterest</li>
+			<li class="social__item social--linkedin" data-network="linkedin">LinkedIn</li>
+		</ul>
+	</div>
+</main>
+
+<footer>
+	<p>Icons by <a href="https://picons.me/download-social.php">Picons.me</a></p>
+</footer>
+
+<script src="http://code.jquery.com/jquery-1.12.0.min.js"></script>
+<script src="../jquery.social.js"></script>
+
+<script>
+	(function ($) {
+		'use strict';
+
+		$('.social').social({
+			facebookAppId: '1006045129447372', // Change it! Does not use this on your site!
+			lang: 'it_IT'
+		});
+
+	}(jQuery));
+</script>
+
+</body>
+</html>
