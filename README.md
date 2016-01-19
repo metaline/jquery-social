@@ -27,3 +27,10 @@ the counter of these platforms may does not work!
 real sharing.
 - Google Analytics tracks Google+ shares automatically as "social" event. This plugin also adds tracking as
 normal event, but the "social" events are more accurate.
+
+## Contributing
+
+- Install [Sass](http://sass-lang.com/install)
+- Fork and clone `git clone https://github.com/USERNAME/jquery-social`
+- Enter project `cd jquery-social`
+- Run `scss --style=compressed --watch demo/css/style.scss:demo/css/style.css`
