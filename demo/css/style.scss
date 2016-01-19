@@ -77,7 +77,7 @@ $socials: (
 				border-color: $color;
 			}
 			.social__icon {
-				background: $color url("images/#{$name}.svg") center no-repeat;
+				background: $color url("../images/#{$name}.svg") center no-repeat;
 			}
 			.social__count {
 				color: $color;
