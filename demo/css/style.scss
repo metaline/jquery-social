@@ -14,8 +14,6 @@ header, main, footer {
 	overflow: hidden;
 }
 
-#social-count {}
-
 // http://designpieces.com/2012/12/social-media-colours-hex-and-rgb/
 $socials: (
 	facebook: #3b5998,
@@ -26,10 +24,33 @@ $socials: (
 );
 
 .social {
-	margin-bottom: 2em;
-	margin-top: 2em;
+	margin: 2em auto;
+	overflow: hidden;
+	width: 800px;
+
+	&__total {
+		float: left;
+
+		span {
+			display: block;
+		}
+
+		&__count {
+			font-size: 50px;
+			line-height: 50px;
+			color: teal;
+		}
+
+		&__text {
+			color: #888;
+			font-size: 9px;
+			line-height: 24px;
+			text-transform: uppercase;
+		}
+	}
 
 	&__list {
+		float: right;
 		list-style: none;
 		margin-bottom: 0;
 		margin-top: 0;

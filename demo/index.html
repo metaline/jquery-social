@@ -18,7 +18,12 @@
 </header>
 
 <main>
-	<div class="social" data-url="http://labs.metaline.it/_script/jquery-social/demo/" data-title="Google.com">
+	<div class="social" data-url="https://www.google.com/" data-title="Google.com">
+		<div class="social__total">
+			<span class="social__total__count" id="social-count">0</span>
+			<span class="social__total__text">Share totali</span>
+		</div>
+
 		<ul class="social__list">
 			<li class="social__item social--facebook" data-network="facebook-share">Facebook</li>
 			<li class="social__item social--google" data-network="googleplus">Google+</li>
@@ -49,7 +54,8 @@
 				twitter: 10,
 				pinterest: 10,
 				linkedin: 10
-			}
+			},
+			totalShareSelector: '#social-count'
 		});
 
 	}(jQuery));

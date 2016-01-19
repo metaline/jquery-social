@@ -81,7 +81,8 @@
             },
             facebookAppId: '',
             lang: 'en_US',
-            enableTracking: false
+            enableTracking: false,
+            totalShareSelector: false
         },
         networks = {
             'facebook-share': {
@@ -388,6 +389,7 @@
             this.text = this.element.data('text') || '';
             this.data = {};
 
+            this.initTotal();
             this.load();
         },
 
@@ -432,6 +434,8 @@
             this.networkButtons[network].html(
                 this.options.template[network].replace('{total}', humanizeNumber(total))
             );
+
+            this.incrementTotal(total);
         },
 
         hasShareCount: function (network) {
@@ -450,6 +454,28 @@
                     window.ga('send', 'social', network, event, url, value);
                 }
             }
+        },
+
+        initTotal: function () {
+            if (this.options.totalShareSelector) {
+                this.$totalShare = $(this.options.totalShareSelector);
+            }
+
+            if (!this.$totalShare) {
+                return;
+            }
+
+            this.total = 0;
+            this.$totalShare.text(this.total);
+        },
+
+        incrementTotal: function (total) {
+            if (!this.$totalShare || !total) {
+                return;
+            }
+
+            this.total += total;
+            this.$totalShare.text(humanizeNumber(this.total));
         }
     };
 
