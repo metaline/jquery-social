@@ -384,10 +384,9 @@
                 return;
             }
 
-            this.url = this.element.data('url') || document.location.href;
-            this.title = this.element.data('title') || document.title;
-            this.text = this.element.data('text') || '';
-            this.data = {};
+            this.url = this.element.data('url') || $('meta[property="og:url"]').attr('content') || document.location.href;
+            this.title = this.element.data('title') || $('meta[property="og:title"]').attr('content') || document.title;
+            this.text = this.element.data('text') || $('meta[property="og:description"]').attr('content') || '';
 
             this.initTotal();
             this.load();
