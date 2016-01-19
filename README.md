@@ -7,7 +7,7 @@ This plugin allows you to:
 - Customize the look of share buttons;
 - Track your social share on Google Analytics (instructions soon);
 
-## Supported social platform
+## Supported social sites
 
 - Facebook
 - Google+
@@ -15,18 +15,18 @@ This plugin allows you to:
 - Pinterest
 - LinkedIn
 
-## Installation
+## How to install
 
 See the example in the demo folder.
 
 ## Notes
 
-- Google+ and Twitter does not provide any documented API to fetch the total share count. For this reason,
-the counter of these platforms may does not work!
+- Google+ and Twitter don’t provide any API to fetch the total share count. For this reason,
+the count of these platforms may not work!
 - The tracking for Pinterest, LinkedIn and Google+ is only an "intent": it’s not possible to trace the
 real sharing.
 - Google Analytics tracks Google+ shares automatically as "social" event. This plugin also adds tracking as
-normal event, but the "social" events are more accurate.
+normal event, but the "social" stats are more accurate.
 
 ## Contributing
 
