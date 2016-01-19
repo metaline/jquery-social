@@ -42,7 +42,14 @@
 
 		$('.social').social({
 			facebookAppId: '1006045129447372', // Change it! Does not use this on your site!
-			lang: 'it_IT'
+			lang: 'it_IT',
+			enableTracking: {
+				'facebook-share': 10,
+				googleplus: 10,
+				twitter: 10,
+				pinterest: 10,
+				linkedin: 10
+			}
 		});
 
 	}(jQuery));

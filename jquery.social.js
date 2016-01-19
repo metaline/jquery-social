@@ -127,12 +127,14 @@
                             href: plugin.url
                         },
                         function (response) {
-                            if (response && !response.error_message && plugin.options.enableTracking) {
+                            if (response && !response.error_message && plugin.options.enableTracking['facebook-share']) {
                                 plugin.tracking(
                                     'Facebook',
                                     'Share',
                                     plugin.url,
-                                    plugin.options.enableTracking['facebook-share']
+                                    plugin.options.enableTracking['facebook-share'],
+                                    true,
+                                    true
                                 );
                             }
                         }
@@ -190,7 +192,9 @@
                         'toolbar=0, status=0, width=900, height=500'
                     );
 
-                    plugin.tracking('Google', '+1', plugin.url, plugin.options.enableTracking.googleplus);
+                    if (plugin.options.enableTracking.googleplus) {
+                        plugin.tracking('Google', '+1', plugin.url, plugin.options.enableTracking.googleplus, true, false);
+                    }
                 },
                 plusoneLoader: null,
                 loaderPromise: null,
@@ -239,7 +243,7 @@
                         return t;
                     }(document, "script", "twitter-wjs"));
 
-                    if (plugin.options.enableTracking) {
+                    if (plugin.options.enableTracking.twitter) {
                         window.twttr.ready(function () {
                             window.twttr.events.bind('tweet', function (event) {
                                 if (!event || event.type !== 'tweet') {
@@ -250,7 +254,9 @@
                                     'Twitter',
                                     'Tweet',
                                     event.target.baseURI,
-                                    plugin.options.enableTracking.twitter
+                                    plugin.options.enableTracking.twitter,
+                                    true,
+                                    true
                                 );
                             });
                         });
@@ -306,7 +312,9 @@
                         window.PinUtils.pinAny();
                     }
 
-                    plugin.tracking('Pinterest', 'Pin It', plugin.url, plugin.options.enableTracking.pinterest);
+                    if (plugin.options.enableTracking.pinterest) {
+                        plugin.tracking('Pinterest', 'Pin It', plugin.url, plugin.options.enableTracking.pinterest, true, true);
+                    }
                 }
             },
             linkedin: {
@@ -341,7 +349,9 @@
                         'toolbar=no,width=550,height=550'
                     );
 
-                    plugin.tracking('LinkedIn', 'Share', plugin.url, plugin.options.enableTracking.linkedin);
+                    if (plugin.options.enableTracking.linkedin) {
+                        plugin.tracking('LinkedIn', 'Share', plugin.url, plugin.options.enableTracking.linkedin, true, true);
+                    }
                 }
             }
         };
@@ -428,13 +438,17 @@
             return this.options.template[network].indexOf('{total}') !== -1;
         },
 
-        tracking: function (network, event, url, value) {
+        tracking: function (network, event, url, value, e, s) {
             if (window.ga) {
-                // https://developers.google.com/analytics/devguides/collection/analyticsjs/events
-                window.ga('send', 'event', 'Social', event + ' (' + network + ')', url, value);
+                if (e === undefined || e) {
+                    // https://developers.google.com/analytics/devguides/collection/analyticsjs/events
+                    window.ga('send', 'event', 'Social', event + ' (' + network + ')', url, value);
+                }
 
-                // https://developers.google.com/analytics/devguides/collection/analyticsjs/social-interactions
-                window.ga('send', 'social', network, event, url, value);
+                if (s === undefined || s) {
+                    // https://developers.google.com/analytics/devguides/collection/analyticsjs/social-interactions
+                    window.ga('send', 'social', network, event, url, value);
+                }
             }
         }
     };
