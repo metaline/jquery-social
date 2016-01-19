@@ -146,7 +146,6 @@
                                 'q': 'SELECT like_count, total_count, share_count, comment_count FROM link_stat WHERE url = "' + plugin.url + '"'
                             }
                         ).done(function (response) {
-                            console.log(response);
                             var total = 0;
 
                             if (response.data && response.data[0] && response.data[0].total_count) {
