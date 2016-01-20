@@ -188,7 +188,7 @@
                 },
                 onClick: function (plugin) {
                     window.open(
-                        'https://plus.google.com/share?hl=' + plugin.options.lang + '&url=' + encodeURIComponent(plugin.url),
+                        'https://plus.google.com/share?hl=' + this.fixLang(plugin.options.lang) + '&url=' + encodeURIComponent(plugin.url),
                         '',
                         'toolbar=0, status=0, width=900, height=500'
                     );
@@ -212,6 +212,35 @@
                     };
 
                     loadScript('https://apis.google.com/js/client:plusone.js?onload=_onGooglePlusLoad');
+                },
+                fixLang: function (lang) {
+                    switch (lang) {
+
+                    case 'en_GB': // English (UK)
+                    case 'en_US': // English (US)
+                    case 'fr_CA': // French (Canada)
+                    case 'pt_BR': // Portuguese (Brazil)
+                    case 'pt_PT': // Portuguese (Portugal)"
+                    case 'zh_CN': // Simplified Chinese (China)
+                    case 'zh_HK': // Traditional Chinese (Hong Kong)
+                    case 'zh_TW': // Traditional Chinese (Taiwan)
+                        return lang.replace('_', '-');
+
+                    case 'es_LA': // Spanish (Latin America)
+                        return 'es-419';
+
+                    case 'he_IL': // Hebrew
+                        return 'iw';
+
+                    case 'nn_NO': // Norwegian
+                        return 'no';
+
+                    case 'tl_PH': // Filipino
+                        return 'fil';
+
+                    }
+
+                    return lang.substr(0, 2);
                 }
             },
             twitter: {
@@ -298,7 +327,7 @@
                 onRender: function (plugin, button) {
                     var a = findAnchorTag(button), url;
 
-                    url = '//' + plugin.options.lang.substr(0, 2) + '.pinterest.com/pin/create/button/?url=' + encodeURIComponent(plugin.url);
+                    url = 'https://www.pinterest.com/pin/create/button/?url=' + encodeURIComponent(plugin.url);
 
                     if (plugin.title) {
                         url += '&description=' + encodeURIComponent(plugin.title);
