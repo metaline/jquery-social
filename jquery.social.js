@@ -34,7 +34,7 @@
 
     function humanizeNumber(num) {
         if (num >= 1e6) {
-            return (num / 1e6).toFixed(2) + 'M';
+            return (num / 1e6).toFixed(1) + 'M';
         }
 
         if (num >= 1e3) {
