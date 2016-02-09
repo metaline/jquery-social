@@ -179,7 +179,11 @@
                             };
 
                             window.gapi.client.rpcRequest('pos.plusones.get', 'v1', params).execute(function (resp) {
-                                plugin.renderNetwork('googleplus', resp.result.metadata.globalCounts.count);
+                                if (resp.result && resp.result.metadata && resp.result.metadata.globalCounts) {
+                                    plugin.renderNetwork('googleplus', resp.result.metadata.globalCounts.count || 0);
+                                } else {
+                                    plugin.renderNetwork('googleplus', 0);
+                                }
                             });
                         });
                     } else {
