@@ -80,6 +80,7 @@
                 'linkedin': '<a href="#" class="social__link"><span class="social__icon"></span><span class="social__count">{total}</span></a>'
             },
             facebookAppId: '',
+            countStatsUrl: 'count-stats.php',
             lang: 'en_US',
             enableTracking: false,
             totalShareSelector: false
@@ -143,22 +144,27 @@
                 },
                 render: function (plugin) {
                     if (plugin.hasShareCount('facebook-share')) {
-                        $.getJSON(
-                            'https://graph.facebook.com/fql',
+                        $.get(
+                            plugin.options.countStatsUrl,
                             {
-                                'q': 'SELECT like_count, total_count, share_count, comment_count FROM link_stat WHERE url = "' + plugin.url + '"'
-                            }
-                        ).done(function (response) {
-                            var total = 0;
+                                url: plugin.url
+                            },
+                            function (response) {
+                                if (!response || response.error) {
+                                    plugin.renderNetwork('facebook-share', 0);
 
-                            if (response.data && response.data[0] && response.data[0].total_count) {
-                                total = response.data[0].total_count;
-                            }
+                                    console.error(response.message);
 
-                            plugin.renderNetwork('facebook-share', total);
-                        }).fail(function () {
-                            plugin.renderNetwork('facebook-share', 0);
-                        });
+                                    return;
+                                }
+
+                                if (response.share !== undefined && response.share.facebook !== undefined) {
+                                    plugin.renderNetwork('facebook-share', response.share.facebook);
+                                } else {
+                                    plugin.renderNetwork('facebook-share', 0);
+                                }
+                            }
+                        );
                     } else {
                         plugin.renderNetwork('facebook-share');
                     }
