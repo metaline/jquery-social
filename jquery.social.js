@@ -144,27 +144,9 @@
                 },
                 render: function (plugin) {
                     if (plugin.hasShareCount('facebook-share')) {
-                        $.get(
-                            plugin.options.countStatsUrl,
-                            {
-                                url: plugin.url
-                            },
-                            function (response) {
-                                if (!response || response.error) {
-                                    plugin.renderNetwork('facebook-share', 0);
-
-                                    console.error(response.message);
-
-                                    return;
-                                }
-
-                                if (response.share !== undefined && response.share.facebook !== undefined) {
-                                    plugin.renderNetwork('facebook-share', response.share.facebook);
-                                } else {
-                                    plugin.renderNetwork('facebook-share', 0);
-                                }
-                            }
-                        );
+                        plugin.countLoader(plugin.url, 'facebook', function (total) {
+                            plugin.renderNetwork('facebook-share', total);
+                        });
                     } else {
                         plugin.renderNetwork('facebook-share');
                     }
@@ -492,6 +474,49 @@
                     window.ga('send', 'social', network, event, url, value);
                 }
             }
+        },
+
+        _loaders: [],
+        countLoader: function (url, network, callback) {
+
+            var plugin = this;
+
+            if (typeof callback !== 'function') {
+                callback = $.noop();
+            }
+
+            function getLoader(url) {
+                var loaders = $.grep(plugin._loaders, function (loader) {
+                    return loader.url === url;
+                });
+
+                if (loaders.length) {
+                    return loaders[0];
+                }
+
+                var loader = new Promise(function (resolve) {
+                    $.get(plugin.options.countStatsUrl, {url: url}, resolve);
+                });
+
+                loader.url = url;
+                plugin._loaders.push(loader);
+
+                return loader;
+            }
+
+            return getLoader(url).then(function (response) {
+                if (!response || response.error) {
+                    callback(0);
+
+                    return;
+                }
+
+                if (response.share !== undefined && response.share[network] !== undefined) {
+                    callback(response.share[network]);
+                } else {
+                    callback(0);
+                }
+            });
         },
 
         initTotal: function () {
