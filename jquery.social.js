@@ -427,6 +427,7 @@
             var plugin = this,
                 button = this.networkButtons[network];
 
+            total = total || 0;
             button.data('share', total);
 
             if (networks[network]) {
@@ -439,9 +440,10 @@
                 button.on('click', function (event) {
                     event.preventDefault();
 
-                    button.data('share', button.data('share') + 1);
+                    var share = parseInt(button.data('share') || 0, 10) + 1;
+                    button.data('share', share);
 
-                    plugin.renderButton(network, button.data('share'));
+                    plugin.renderButton(network, share);
 
                     if (typeof networks[network].onClick === 'function') {
                         networks[network].onClick(plugin, button);
