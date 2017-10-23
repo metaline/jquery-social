@@ -207,29 +207,27 @@
                 },
                 fixLang: function (lang) {
                     switch (lang) {
+                        case 'en_GB': // English (UK)
+                        case 'en_US': // English (US)
+                        case 'fr_CA': // French (Canada)
+                        case 'pt_BR': // Portuguese (Brazil)
+                        case 'pt_PT': // Portuguese (Portugal)"
+                        case 'zh_CN': // Simplified Chinese (China)
+                        case 'zh_HK': // Traditional Chinese (Hong Kong)
+                        case 'zh_TW': // Traditional Chinese (Taiwan)
+                            return lang.replace('_', '-');
 
-                    case 'en_GB': // English (UK)
-                    case 'en_US': // English (US)
-                    case 'fr_CA': // French (Canada)
-                    case 'pt_BR': // Portuguese (Brazil)
-                    case 'pt_PT': // Portuguese (Portugal)"
-                    case 'zh_CN': // Simplified Chinese (China)
-                    case 'zh_HK': // Traditional Chinese (Hong Kong)
-                    case 'zh_TW': // Traditional Chinese (Taiwan)
-                        return lang.replace('_', '-');
+                        case 'es_LA': // Spanish (Latin America)
+                            return 'es-419';
 
-                    case 'es_LA': // Spanish (Latin America)
-                        return 'es-419';
+                        case 'he_IL': // Hebrew
+                            return 'iw';
 
-                    case 'he_IL': // Hebrew
-                        return 'iw';
+                        case 'nn_NO': // Norwegian
+                            return 'no';
 
-                    case 'nn_NO': // Norwegian
-                        return 'no';
-
-                    case 'tl_PH': // Filipino
-                        return 'fil';
-
+                        case 'tl_PH': // Filipino
+                            return 'fil';
                     }
 
                     return lang.substr(0, 2);
