@@ -457,7 +457,7 @@
                 this.options.template[network].replace('{total}', humanizeNumber(total))
             );
 
-            this.incrementTotal(total);
+            this.updateTotal();
         },
 
         hasShareCount: function (network) {
@@ -530,17 +530,20 @@
                 return;
             }
 
-            this.total = 0;
-            this.$totalShare.text(this.total);
+            this.$totalShare.text(0);
         },
 
-        incrementTotal: function (total) {
-            if (!this.$totalShare || !total) {
+        updateTotal: function () {
+            if (!this.$totalShare) {
                 return;
             }
 
-            this.total += total;
-            this.$totalShare.text(humanizeNumber(this.total));
+            var total = 0;
+            $.each(this.networkButtons, function () {
+                total += parseInt($(this).data('share') || 0, 10);
+            });
+
+            this.$totalShare.text(humanizeNumber(total));
         }
     };
 
