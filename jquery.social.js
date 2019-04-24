@@ -506,6 +506,10 @@
 
             return getLoader(url).then(function (response) {
                 if (!response || response.error) {
+                    if (response.message) {
+                        throw response.message;
+                    }
+
                     callback(0);
 
                     return;
