@@ -208,45 +208,170 @@ class NullCacheStore implements CacheStoreInterface
     }
 }
 
-class ResponseSender
+class Response
 {
     /**
-     * @var FileCacheStore
+     * @var int
      */
-    private $cache;
+    private $statusCode;
 
+    /**
+     * @var string
+     */
+    private $reasonPhrase;
+
+    /**
+     * @var array
+     */
+    private $headers;
+
+    /**
+     * @var string
+     */
+    private $body;
+
+    /**
+     * @param int    $statusCode
+     * @param string $reasonPhrase
+     * @param array  $headers
+     */
+    public function __construct($statusCode = 200, $reasonPhrase = 'OK', array $headers = [])
+    {
+        $this->statusCode = $statusCode;
+        $this->reasonPhrase = $reasonPhrase;
+        $this->headers = $headers;
+        $this->body = '';
+    }
+
+    /**
+     * @return int
+     */
+    public function getStatusCode()
+    {
+        return $this->statusCode;
+    }
+
+    /**
+     * @param int $statusCode
+     * @return $this
+     */
+    public function setStatusCode($statusCode)
+    {
+        $this->statusCode = $statusCode;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getReasonPhrase()
+    {
+        return $this->reasonPhrase;
+    }
+
+    /**
+     * @param string $reasonPhrase
+     * @return $this
+     */
+    public function setReasonPhrase($reasonPhrase)
+    {
+        $this->reasonPhrase = $reasonPhrase;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
+
+    /**
+     * @param string $name
+     * @param string $value
+     * @return $this
+     */
+    public function addHeader($name, $value)
+    {
+        $this->headers[$name] = $value;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBody()
+    {
+        return $this->body;
+    }
+
+    /**
+     * @param string $body
+     * @return $this
+     */
+    public function setBody($body)
+    {
+        $this->body = $body;
+
+        return $this;
+    }
+
+    public static function __set_state(array $data)
+    {
+        $response = new self();
+        foreach ($data as $name => $value) {
+            $response->$name = $value;
+        }
+
+        return $response;
+    }
+}
+
+class JsonResponse extends Response
+{
+    public function __construct($statusCode = 200, $reasonPhrase = 'OK', array $headers = [])
+    {
+        parent::__construct($statusCode, $reasonPhrase, $headers);
+
+        $this->addHeader('Content-Type', 'application/json; charset=utf-8');
+    }
+}
+
+interface ResponseBuilderInterface
+{
+    /**
+     * @param string           $name
+     * @param FetcherInterface $fetcher
+     * @return $this
+     */
+    public function registerFetcher($name, FetcherInterface $fetcher);
+
+    /**
+     * @param string $url
+     * @return JsonResponse
+     */
+    public function shareResponse($url);
+
+    /**
+     * @param string $message
+     * @return JsonResponse
+     */
+    public function errorResponse($message);
+}
+
+class ResponseBuilder implements ResponseBuilderInterface
+{
     /**
      * @var FetcherInterface[]
      */
     private $fetcher = [];
 
     /**
-     * @param FileCacheStore $cache
-     * @return $this
-     */
-    public function setCache(FileCacheStore $cache)
-    {
-        $this->cache = $cache;
-
-        return $this;
-    }
-
-    /**
-     * @return FileCacheStore
-     */
-    private function getCache()
-    {
-        if (null === $this->cache) {
-            $this->cache = new NullCacheStore();
-        }
-
-        return $this->cache;
-    }
-
-    /**
-     * @param string           $name
-     * @param FetcherInterface $fetcher
-     * @return $this
+     * @inheritdoc
      */
     public function registerFetcher($name, FetcherInterface $fetcher)
     {
@@ -256,57 +381,125 @@ class ResponseSender
     }
 
     /**
-     * @param string $url
+     * @inheritdoc
      */
-    public function sendShare($url)
+    public function shareResponse($url)
     {
-        $this->sendHeaders();
-
-        $response = $this->getCache()->get($url);
-
-        if (null === $response) {
-            $share = [];
-            foreach ($this->fetcher as $name => $fetcher) {
-                $share[$name] = $fetcher->getCount($url);
-            }
-
-            $response = json_encode([
-                'error' => false,
-                'share' => $share,
-            ]);
-
-            $this->getCache()->set($url, $response);
+        $share = [];
+        foreach ($this->fetcher as $name => $fetcher) {
+            $share[$name] = $fetcher->getCount($url);
         }
 
-        echo $response;
+        $responseBody = json_encode([
+            'error' => false,
+            'share' => $share,
+        ]);
+
+        $response = new JsonResponse();
+        $response->setBody($responseBody);
+
+        return $response;
     }
 
     /**
-     * @param string $message
+     * @inheritdoc
      */
-    public function sendError($message)
+    public function errorResponse($message)
     {
-        $this->sendHeaders();
-
-        echo json_encode([
+        $response = new JsonResponse();
+        $response->setBody(json_encode([
             'error'   => true,
             'message' => $message,
-        ]);
+        ]));
+
+        return $response;
+    }
+}
+
+class CachedResponseBuilder implements ResponseBuilderInterface
+{
+    /**
+     * @var ResponseBuilderInterface
+     */
+    private $responseBuilder;
+
+    /**
+     * @var CacheStoreInterface
+     */
+    private $cache;
+
+    /**
+     * @param ResponseBuilderInterface $responseBuilder
+     * @param CacheStoreInterface      $cache
+     */
+    public function __construct(ResponseBuilderInterface $responseBuilder, CacheStoreInterface $cache)
+    {
+        $this->responseBuilder = $responseBuilder;
+        $this->cache = $cache;
     }
 
-    private function sendHeaders()
+    /**
+     * @inheritdoc
+     */
+    public function registerFetcher($name, FetcherInterface $fetcher)
     {
-        header('Content-Type: application/json; charset=utf-8');
+        $this->responseBuilder->registerFetcher($name, $fetcher);
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function shareResponse($url)
+    {
+        $response = $this->cache->get($url);
+
+        if ($response instanceof Response) {
+            $response->addHeader('X-Cache', 'HIT');
+        } else {
+            $response = $this->responseBuilder->shareResponse($url);
+            $this->cache->set($url, $response);
+
+            $response->addHeader('X-Cache', 'MISS');
+        }
+
+        return $response;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function errorResponse($message)
+    {
+        return $this->responseBuilder->errorResponse($message);
+    }
+}
+
+class ResponseSender
+{
+    public function send(Response $response)
+    {
+        header('HTTP/1.1 ' . $response->getStatusCode() . ' ' . $response->getReasonPhrase());
+
+        foreach ($response->getHeaders() as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        echo $response->getBody();
     }
 }
 
 /**
  * HTTP Response
  */
-$responseSender = new ResponseSender();
+$responseBuilder = new ResponseBuilder();
 
 try {
-    $responseSender->setCache(new FileCacheStore($cacheDir));
+    $responseBuilder = new CachedResponseBuilder(
+        $responseBuilder,
+        new FileCacheStore($cacheDir)
+    );
 
     if (empty($_GET['url'])) {
         throw new ErrorException('You must specify an URL.');
@@ -316,9 +509,11 @@ try {
         throw new ErrorException('You must specify the Facebook App ID and app secret in the stats file.');
     }
 
-    $responseSender->registerFetcher('facebook', new Facebook($facebookAppId, $facebookAppSecret));
+    $responseBuilder->registerFetcher('facebook', new Facebook($facebookAppId, $facebookAppSecret));
 
-    $responseSender->sendShare($_GET['url']);
+    $response = $responseBuilder->shareResponse($_GET['url']);
 } catch (Exception $e) {
-    $responseSender->sendError($e->getMessage());
+    $response = $responseBuilder->errorResponse($e->getMessage());
 }
+
+(new ResponseSender())->send($response);
