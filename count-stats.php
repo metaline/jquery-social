@@ -5,6 +5,7 @@ error_reporting(-1);
 
 $facebookAppId = '';
 $facebookAppSecret = '';
+$cacheDir = __DIR__ . '/cache';
 
 interface FetcherInterface
 {
@@ -304,7 +305,7 @@ class ResponseSender
 $responseSender = new ResponseSender();
 
 try {
-    $responseSender->setCache(new FileCacheStore(__DIR__ . '/cache'));
+    $responseSender->setCache(new FileCacheStore($cacheDir));
 
     if (empty($_GET['url'])) {
         throw new ErrorException('You must specify an URL.');
