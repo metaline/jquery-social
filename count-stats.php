@@ -8,29 +8,37 @@ $fb_app_secret = '';
 
 /**
  * @param string $id
- * @return array
+ * @return int
  *
- * @see https://developers.facebook.com/docs/graph-api/reference/v2.6/url/
+ * @see https://developers.facebook.com/docs/graph-api/reference/v3.2/url
  */
 function fb_api_url($id)
 {
     global $fb_app_id, $fb_app_secret;
 
-    $response = json_decode(
-        request(
-            'https://graph.facebook.com/v2.6/?' . http_build_query([
-                'id'           => $id,
-                'access_token' => $fb_app_id . '|' . $fb_app_secret
-            ])
-        ),
-        true
-    );
-
-    if (isset($response['share']['share_count'])) {
-        return $response['share']['share_count'];
+    try {
+        $response = json_decode(
+            request(
+                'https://graph.facebook.com/v3.2/?' . http_build_query([
+                    'id'           => $id,
+                    'fields'       => 'engagement',
+                    'access_token' => $fb_app_id . '|' . $fb_app_secret
+                ])
+            ),
+            true
+        );
+    } catch (ErrorException $e) {
+        return 0;
     }
 
-    return 0;
+    $share = 0;
+    if (isset($response['engagement']) && is_array($response['engagement'])) {
+        foreach ($response['engagement'] as $item) {
+            $share += (int) $item;
+        }
+    }
+
+    return $share;
 }
 
 /**
