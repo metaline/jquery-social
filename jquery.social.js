@@ -507,7 +507,7 @@
             return getLoader(url).then(function (response) {
                 if (!response || response.error) {
                     if (response.message) {
-                        throw response.message;
+                        console.error(response.message);
                     }
 
                     callback(0);
