@@ -110,11 +110,12 @@ interface CacheStoreInterface
     /**
      * @param string $id
      * @param string $value
+     * @param int    $ttl
      */
-    public function set($id, $value);
+    public function set($id, $value, $ttl = 7200);
 }
 
-class FileCacheStore
+class FileCacheStore implements CacheStoreInterface
 {
     private $cacheDir;
 
@@ -160,7 +161,7 @@ class FileCacheStore
     /**
      * @inheritdoc
      */
-    public function set($id, $value, $ttl = 3600)
+    public function set($id, $value, $ttl = 7200)
     {
         $filePath = $this->filePath($id);
         $dirPath = dirname($filePath);
@@ -202,7 +203,7 @@ class NullCacheStore implements CacheStoreInterface
     /**
      * @inheritdoc
      */
-    public function set($id, $value)
+    public function set($id, $value, $ttl = 3600)
     {
     }
 }
