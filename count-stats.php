@@ -6,7 +6,12 @@ error_reporting(-1);
 $facebookAppId = '';
 $facebookAppSecret = '';
 
-class Facebook
+interface FetcherInterface
+{
+    public function getCount($url);
+}
+
+class Facebook implements FetcherInterface
 {
     /**
      * @var string
@@ -35,7 +40,7 @@ class Facebook
      *
      * @see https://developers.facebook.com/docs/graph-api/reference/v3.2/url
      */
-    public function get($url)
+    public function getCount($url)
     {
         $response = json_decode(
             $this->sendRequest(
@@ -96,11 +101,30 @@ class Facebook
 class ResponseSender
 {
     /**
-     * @param array $share
+     * @var FetcherInterface[]
      */
-    public function sendShare(array $share)
+    private $fetcher = [];
+
+    /**
+     * @param string           $name
+     * @param FetcherInterface $fetcher
+     */
+    public function registerFetcher($name, FetcherInterface $fetcher)
+    {
+        $this->fetcher[$name] = $fetcher;
+    }
+
+    /**
+     * @param string $url
+     */
+    public function sendShare($url)
     {
         $this->sendHeaders();
+
+        $share = [];
+        foreach ($this->fetcher as $name => $fetcher) {
+            $share[$name] = $fetcher->getCount($url);
+        }
 
         echo json_encode([
             'error' => false,
@@ -141,12 +165,9 @@ try {
         throw new ErrorException('You must specify the Facebook App ID and app secret in the stats file.');
     }
 
-    $facebook = new Facebook($facebookAppId, $facebookAppSecret);
-    $url = $_GET['url'];
+    $responseSender->registerFetcher('facebook', new Facebook($facebookAppId, $facebookAppSecret));
 
-    $responseSender->sendShare([
-        'facebook' => $facebook->get($url),
-    ]);
+    $responseSender->sendShare($_GET['url']);
 } catch (Exception $e) {
     $responseSender->sendError($e->getMessage());
 }
