@@ -98,20 +98,159 @@ class Facebook implements FetcherInterface
     }
 }
 
+interface CacheStoreInterface
+{
+    /**
+     * @param string $id
+     * @return string|null
+     */
+    public function get($id);
+
+    /**
+     * @param string $id
+     * @param string $value
+     */
+    public function set($id, $value);
+}
+
+class FileCacheStore
+{
+    private $cacheDir;
+
+    /**
+     * @param string $cacheDir
+     * @throws ErrorException
+     */
+    public function __construct($cacheDir)
+    {
+        if (empty($cacheDir)) {
+            throw new ErrorException('Cache dir must be specified');
+        } elseif (!file_exists($cacheDir)) {
+            throw new ErrorException('Cache dir does not exist');
+        } elseif (!is_readable($cacheDir)) {
+            throw new ErrorException('Cache dir is not readable');
+        } elseif (!is_writable($cacheDir)) {
+            throw new ErrorException('Cache dir is not writable');
+        }
+
+        $this->cacheDir = $cacheDir;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function get($id)
+    {
+        $filePath = $this->filePath($id);
+
+        if (file_exists($filePath) && is_readable($filePath)) {
+            $data = include $filePath;
+
+            if ($data['expired'] < time()) {
+                return null;
+            }
+
+            return $data['value'];
+        }
+
+        return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function set($id, $value, $ttl = 3600)
+    {
+        $filePath = $this->filePath($id);
+        $dirPath = dirname($filePath);
+
+        if (!is_dir($dirPath)) {
+            mkdir($dirPath, 0777, true);
+        }
+
+        $data = [
+            'expired' => time() + $ttl,
+            'value'   => $value,
+        ];
+
+        file_put_contents($filePath, '<?php return ' . var_export($data, true) . ';');
+    }
+
+    /**
+     * @param string $id
+     * @return string
+     */
+    private function filePath($id)
+    {
+        $id = md5($id);
+
+        return $this->cacheDir . '/' . substr($id, 0, 1) . '/' . substr($id, 1, 1) . '/' . $id . '.php';
+    }
+}
+
+class NullCacheStore implements CacheStoreInterface
+{
+    /**
+     * @inheritdoc
+     */
+    public function get($id)
+    {
+        return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function set($id, $value)
+    {
+    }
+}
+
 class ResponseSender
 {
+    /**
+     * @var FileCacheStore
+     */
+    private $cache;
+
     /**
      * @var FetcherInterface[]
      */
     private $fetcher = [];
 
     /**
+     * @param FileCacheStore $cache
+     * @return $this
+     */
+    public function setCache(FileCacheStore $cache)
+    {
+        $this->cache = $cache;
+
+        return $this;
+    }
+
+    /**
+     * @return FileCacheStore
+     */
+    private function getCache()
+    {
+        if (null === $this->cache) {
+            $this->cache = new NullCacheStore();
+        }
+
+        return $this->cache;
+    }
+
+    /**
      * @param string           $name
      * @param FetcherInterface $fetcher
+     * @return $this
      */
     public function registerFetcher($name, FetcherInterface $fetcher)
     {
         $this->fetcher[$name] = $fetcher;
+
+        return $this;
     }
 
     /**
@@ -121,15 +260,23 @@ class ResponseSender
     {
         $this->sendHeaders();
 
-        $share = [];
-        foreach ($this->fetcher as $name => $fetcher) {
-            $share[$name] = $fetcher->getCount($url);
+        $response = $this->getCache()->get($url);
+
+        if (null === $response) {
+            $share = [];
+            foreach ($this->fetcher as $name => $fetcher) {
+                $share[$name] = $fetcher->getCount($url);
+            }
+
+            $response = json_encode([
+                'error' => false,
+                'share' => $share,
+            ]);
+
+            $this->getCache()->set($url, $response);
         }
 
-        echo json_encode([
-            'error' => false,
-            'share' => $share,
-        ]);
+        echo $response;
     }
 
     /**
@@ -157,6 +304,8 @@ class ResponseSender
 $responseSender = new ResponseSender();
 
 try {
+    $responseSender->setCache(new FileCacheStore(__DIR__ . '/cache'));
+
     if (empty($_GET['url'])) {
         throw new ErrorException('You must specify an URL.');
     }
