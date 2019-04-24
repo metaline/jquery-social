@@ -3,100 +3,150 @@
 ini_set('display_errors', 1);
 error_reporting(-1);
 
-$fb_app_id = '';
-$fb_app_secret = '';
+$facebookAppId = '';
+$facebookAppSecret = '';
 
-/**
- * @param string $id
- * @return int
- * @throws ErrorException
- *
- * @see https://developers.facebook.com/docs/graph-api/reference/v3.2/url
- */
-function fb_api_url($id)
+class Facebook
 {
-    global $fb_app_id, $fb_app_secret;
+    /**
+     * @var string
+     */
+    private $appId;
 
-    $response = json_decode(
-        request(
-            'https://graph.facebook.com/v3.2/?' . http_build_query([
-                'id'           => $id,
-                'fields'       => 'engagement',
-                'access_token' => $fb_app_id . '|' . $fb_app_secret
-            ])
-        ),
-        true
-    );
+    /**
+     * @var string
+     */
+    private $appSecret;
 
-    if (isset($response['error']) && $response['error']) {
-        if (isset($response['message'])) {
-            throw new ErrorException($response['message']);
-        }
-
-        throw new ErrorException('An error has occurred with the Facebook API call.');
+    /**
+     * @param string $appId
+     * @param string $appSecret
+     */
+    public function __construct($appId, $appSecret)
+    {
+        $this->appId = $appId;
+        $this->appSecret = $appSecret;
     }
 
-    $share = 0;
-    if (isset($response['engagement']) && is_array($response['engagement'])) {
-        foreach ($response['engagement'] as $item) {
-            $share += (int) $item;
+    /**
+     * @param string $url
+     * @return int
+     * @throws ErrorException
+     *
+     * @see https://developers.facebook.com/docs/graph-api/reference/v3.2/url
+     */
+    public function get($url)
+    {
+        $response = json_decode(
+            $this->sendRequest(
+                'https://graph.facebook.com/v3.2/?' . http_build_query([
+                    'id'           => $url,
+                    'fields'       => 'engagement',
+                    'access_token' => $this->appId . '|' . $this->appSecret
+                ])
+            ),
+            true
+        );
+
+        if (isset($response['error']) && $response['error']) {
+            if (isset($response['error']['message'])) {
+                throw new ErrorException($response['error']['message']);
+            }
+
+            throw new ErrorException('An error has occurred with the Facebook API call.');
         }
+
+        $share = 0;
+        if (isset($response['engagement']) && is_array($response['engagement'])) {
+            foreach ($response['engagement'] as $item) {
+                $share += (int) $item;
+            }
+        }
+
+        return $share;
     }
 
-    return $share;
+    /**
+     * @param string $url
+     * @return string
+     * @throws ErrorException
+     */
+    private function sendRequest($url)
+    {
+        $handle = curl_init();
+
+        curl_setopt($handle, CURLOPT_URL, $url);
+        curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($handle);
+
+        $errNo = curl_errno($handle);
+        $errDesc = curl_error($handle);
+
+        curl_close($handle);
+
+        if ($errNo) {
+            throw new ErrorException($errDesc);
+        }
+
+        return $response;
+    }
 }
 
-/**
- * @param string $url
- * @return string
- * @throws ErrorException
- */
-function request($url)
+class ResponseSender
 {
-    $handle = curl_init();
+    /**
+     * @param array $share
+     */
+    public function sendShare(array $share)
+    {
+        $this->sendHeaders();
 
-    curl_setopt($handle, CURLOPT_URL, $url);
-    curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
-
-    $response = curl_exec($handle);
-
-    $errNo = curl_errno($handle);
-    $errDesc = curl_error($handle);
-
-    curl_close($handle);
-
-    if ($errNo) {
-        throw new ErrorException($errDesc);
+        echo json_encode([
+            'error' => false,
+            'share' => $share,
+        ]);
     }
 
-    return $response;
+    /**
+     * @param string $message
+     */
+    public function sendError($message)
+    {
+        $this->sendHeaders();
+
+        echo json_encode([
+            'error'   => true,
+            'message' => $message,
+        ]);
+    }
+
+    private function sendHeaders()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+    }
 }
 
 /**
  * HTTP Response
  */
-header('Content-Type: application/json; charset=utf-8');
+$responseSender = new ResponseSender();
 
 try {
     if (empty($_GET['url'])) {
         throw new ErrorException('You must specify an URL.');
     }
 
-    if (empty($fb_app_id) || empty($fb_app_secret)) {
+    if (empty($facebookAppId) || empty($facebookAppSecret)) {
         throw new ErrorException('You must specify the Facebook App ID and app secret in the stats file.');
     }
 
+    $facebook = new Facebook($facebookAppId, $facebookAppSecret);
     $url = $_GET['url'];
 
-    echo json_encode([
-        'error' => false,
-        'share' => [
-            'facebook' => fb_api_url($url),
-        ],
+    $responseSender->sendShare([
+        'facebook' => $facebook->get($url),
     ]);
 } catch (Exception $e) {
-    exit(json_encode([
-        'error'   => true,
-        'message' => $e->getMessage(),
-    ]));
+    $responseSender->sendError($e->getMessage());
 }
