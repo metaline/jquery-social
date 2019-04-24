@@ -9,6 +9,7 @@ $fb_app_secret = '';
 /**
  * @param string $id
  * @return int
+ * @throws ErrorException
  *
  * @see https://developers.facebook.com/docs/graph-api/reference/v3.2/url
  */
@@ -16,19 +17,23 @@ function fb_api_url($id)
 {
     global $fb_app_id, $fb_app_secret;
 
-    try {
-        $response = json_decode(
-            request(
-                'https://graph.facebook.com/v3.2/?' . http_build_query([
-                    'id'           => $id,
-                    'fields'       => 'engagement',
-                    'access_token' => $fb_app_id . '|' . $fb_app_secret
-                ])
-            ),
-            true
-        );
-    } catch (ErrorException $e) {
-        return 0;
+    $response = json_decode(
+        request(
+            'https://graph.facebook.com/v3.2/?' . http_build_query([
+                'id'           => $id,
+                'fields'       => 'engagement',
+                'access_token' => $fb_app_id . '|' . $fb_app_secret
+            ])
+        ),
+        true
+    );
+
+    if (isset($response['error']) && $response['error']) {
+        if (isset($response['message'])) {
+            throw new ErrorException($response['message']);
+        }
+
+        throw new ErrorException('An error has occurred with the Facebook API call.');
     }
 
     $share = 0;
@@ -73,7 +78,7 @@ function request($url)
 header('Content-Type: application/json; charset=utf-8');
 
 try {
-    if (!isset($_GET['url']) || empty($_GET['url'])) {
+    if (empty($_GET['url'])) {
         throw new ErrorException('You must specify an URL.');
     }
 
